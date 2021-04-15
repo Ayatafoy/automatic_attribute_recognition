@@ -3,7 +3,7 @@ import streamlit as st
 from PIL import Image
 import cv2
 import numpy as np
-import time
+import tensorflow as tf
 from tensorflow.keras.applications.efficientnet import preprocess_input
 from keras.models import load_model
 
@@ -48,7 +48,8 @@ if st.sidebar.button("Click Here to Classify"):
                 img_pixels = preprocess_input(image)
                 img_pixels = cv2.resize(img_pixels, (256, 256))
                 img_pixels = np.expand_dims(img_pixels, axis=0)
-                preds = model.predict(img_pixels)
+                img_pixels_tensor = tf.convert_to_tensor(img_pixels, dtype=tf.int32)
+                preds = model.predict(img_pixels_tensor)
                 prediction = np.argmax(preds)
                 st.success('Done!')
                 st.sidebar.header("Algorithm Predicts: ")
