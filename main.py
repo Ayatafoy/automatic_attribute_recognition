@@ -62,8 +62,8 @@ if st.sidebar.button("Click Here to Classify"):
                 probability = "{:.3f}".format(float(preds[0][prediction] * 100))
                 st.sidebar.write(f"Predicted sleeve length: {classes[prediction]}", '\n')
                 st.sidebar.write('**Probability: **', preds[0][prediction] * 100, '%')
-                gc.collect()
-                keras.backend.clear_session()
+                # gc.collect()
+                # keras.backend.clear_session()
             except Exception:
                 st.sidebar.error("This file format is not supported. Please try to upload another image...")
 
