@@ -109,6 +109,8 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+models/colors_cache.pickle
+models/segmentation_model.h5
 
 # Spyder project settings
 .spyderproject

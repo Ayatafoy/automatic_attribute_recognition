@@ -6,6 +6,60 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.applications.efficientnet import preprocess_input
 from keras.models import load_model
+import operator
+from colormap import rgb2hex
+import pickle
+
+
+def get_dress(img):
+    model = init_segmentation_model()
+    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+    img = tf.image.resize_with_pad(img, target_height=512, target_width=512)
+    bgr = img.numpy()
+    img = np.expand_dims(img, axis=0) / 255.
+    seq = model.predict(img)
+    seq_new = seq[3][0, :, :, 0]
+    mask = np.where(seq_new > 0.02, 1, 0)
+    pixels = bgr[:, :, ::-1][mask != 0]
+
+    return pixels
+
+
+def calculate_colors(pixels, main_color_names, main_colors_cashe):
+    count = 0
+    main_stat = {}
+    for name in main_color_names:
+        main_stat[name] = 0
+
+    for i, pixel in enumerate(pixels):
+        pixel_hex = rgb2hex(int(pixel[0]), int(pixel[1]), int(pixel[2]))
+        main_color_name = main_colors_cashe[pixel_hex]
+        main_stat[main_color_name] += 1
+        count += 1
+    for k, v in main_stat.items():
+        main_stat[k] = round(v / count, 2)
+
+    main_stat = sorted(main_stat.items(), key=operator.itemgetter(0))
+
+    return main_stat
+
+
+@st.cache(allow_output_mutation=True)
+def init_colors_cache():
+    with open('models/colors_cache.pickle', 'rb') as f:
+        cache = pickle.load(f)
+
+    with open('models/color_names.pickle', 'rb') as f:
+        names = pickle.load(f)
+
+    return cache, names
+
+
+
+@st.cache(allow_output_mutation=True)
+def init_segmentation_model():
+    model = load_model("models/segmentation_model.h5")
+    return model
 
 @st.cache(allow_output_mutation=True)
 def init_sl_model():
@@ -30,6 +84,16 @@ def predict_dress_length(img_pixels_tensor):
         preds = model.predict(img_pixels_tensor)
 
     return preds
+
+
+def parse_colors(colors):
+    max = -np.inf
+    for i, color in enumerate(colors):
+        if color[1] > max:
+            max = color[1]
+            color_prediction = color
+    return color_prediction
+
 
 try:
     sl_classes = ['3 / 4 Sleeve', 'Short Sleeve', 'Sleeveless', 'Long Sleeve']
@@ -61,6 +125,10 @@ try:
                     image = np.asarray(u_img)
                     if image.shape[2] == 4:
                         image = image[:, :, :3]
+                    pixels = get_dress(image)
+                    cache, names = init_colors_cache()
+                    result = calculate_colors(pixels, names, cache)
+                    color_name, color_score = parse_colors(result)
                     img_pixels = preprocess_input(image)
                     img_pixels = cv2.resize(img_pixels, (256, 256))
                     img_pixels = np.expand_dims(img_pixels, axis=0)
@@ -80,6 +148,10 @@ try:
                     st.sidebar.write(f'Predicted dress length: **{dl_classes[dl_prediction]}**')
                     st.sidebar.write('\n')
                     st.sidebar.write('Probability: ', dl_preds[0][dl_prediction] * 100, '%')
+                    st.sidebar.write('\n')
+                    st.sidebar.write(f'Predicted dress color: **{color_name}**')
+                    st.sidebar.write('\n')
+                    st.sidebar.write('Probability: ', color_score * 100, '%')
                 except Exception as e:
                     st.sidebar.error(e)
                     st.sidebar.error("This file format is not supported. Please try to upload another image...")
