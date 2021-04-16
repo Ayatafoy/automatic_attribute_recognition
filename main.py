@@ -11,8 +11,7 @@ from colormap import rgb2hex
 import pickle
 
 
-def get_dress(img):
-    model = init_segmentation_model()
+def get_dress(img, model):
     img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
     img = tf.image.resize_with_pad(img, target_height=512, target_width=512)
     bgr = img.numpy()
@@ -45,7 +44,7 @@ def calculate_colors(pixels, main_color_names, main_colors_cashe):
 
 
 @st.cache(allow_output_mutation=True)
-def init_colors_cache():
+def load_color_classifier():
     with open('models/colors_cache.pickle', 'rb') as f:
         cache = pickle.load(f)
 
@@ -57,30 +56,28 @@ def init_colors_cache():
 
 
 @st.cache(allow_output_mutation=True)
-def init_segmentation_model():
+def load_segmentation_model():
     model = load_model("models/segmentation_model.h5")
     return model
 
 @st.cache(allow_output_mutation=True)
-def init_sl_model():
+def load_sleeve_length_classifier():
     model = load_model("models/sleeve_length_classifier.hdf5")
     return model
 
 @st.cache(allow_output_mutation=True)
-def init_dl_model():
+def load_dress_length_classifier():
     model = load_model("models/dress_length_classifier.hdf5")
     return model
 
-def predict_sleeve_length(img_pixels_tensor):
+def predict_sleeve_length(img_pixels_tensor, model):
     with tf.device('/cpu'):
-        model = init_sl_model()
         preds = model.predict(img_pixels_tensor)
 
     return preds
 
-def predict_dress_length(img_pixels_tensor):
+def predict_dress_length(img_pixels_tensor, model):
     with tf.device('/cpu'):
-        model = init_dl_model()
         preds = model.predict(img_pixels_tensor)
 
     return preds
@@ -96,6 +93,11 @@ def parse_colors(colors):
 
 
 try:
+    cache, names = load_color_classifier()
+    with tf.device('/cpu'):
+        sl_model = load_sleeve_length_classifier()
+        dl_model = load_dress_length_classifier()
+        seg_model = load_segmentation_model()
     sl_classes = ['3 / 4 Sleeve', 'Short Sleeve', 'Sleeveless', 'Long Sleeve']
     dl_classes = ['long', 'short', 'midi', 'knee']
     st.write('\n')
@@ -125,16 +127,15 @@ try:
                     image = np.asarray(u_img)
                     if image.shape[2] == 4:
                         image = image[:, :, :3]
-                    pixels = get_dress(image)
-                    cache, names = init_colors_cache()
+                    pixels = get_dress(image, seg_model)
                     result = calculate_colors(pixels, names, cache)
                     color_name, color_score = parse_colors(result)
                     img_pixels = preprocess_input(image)
                     img_pixels = cv2.resize(img_pixels, (256, 256))
                     img_pixels = np.expand_dims(img_pixels, axis=0)
                     img_pixels_tensor = tf.convert_to_tensor(img_pixels, dtype=tf.int32)
-                    sl_preds = predict_sleeve_length(img_pixels_tensor)
-                    dl_preds = predict_dress_length(img_pixels_tensor)
+                    sl_preds = predict_sleeve_length(img_pixels_tensor, sl_model)
+                    dl_preds = predict_dress_length(img_pixels_tensor, dl_model)
                     sl_prediction = np.argmax(sl_preds)
                     dl_prediction = np.argmax(dl_preds)
                     st.success('Done!')
