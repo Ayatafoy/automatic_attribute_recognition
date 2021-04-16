@@ -56,7 +56,7 @@ try:
                     st.success('Done!')
                     st.sidebar.header("Algorithm Predicts: ")
                     probability = "{:.3f}".format(float(preds[0][prediction] * 100))
-                    st.sidebar.write('**Predicted sleeve length: **', classes[prediction])
+                    st.sidebar.write(f'Predicted sleeve length: ', classes[prediction])
                     st.sidebar.write('\n')
                     st.sidebar.write('**Probability: **', preds[0][prediction] * 100, '%')
                 except Exception as e:
