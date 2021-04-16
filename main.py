@@ -3,9 +3,12 @@ import streamlit as st
 from PIL import Image
 import cv2
 import numpy as np
+import psutil
 import tensorflow as tf
 from tensorflow.keras.applications.efficientnet import preprocess_input
 from keras.models import load_model
+
+print(psutil.virtual_memory())
 
 classes = ['3 / 4 Sleeve', 'Short Sleeve', 'Sleeveless', 'Long Sleeve']
 # Designing the interface
@@ -50,6 +53,7 @@ if st.sidebar.button("Click Here to Classify"):
                 img_pixels = np.expand_dims(img_pixels, axis=0)
                 img_pixels_tensor = tf.convert_to_tensor(img_pixels, dtype=tf.int32)
                 preds = model.predict(img_pixels_tensor)
+                print(psutil.virtual_memory())
                 prediction = np.argmax(preds)
                 st.success('Done!')
                 st.sidebar.header("Algorithm Predicts: ")
