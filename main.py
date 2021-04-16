@@ -10,6 +10,16 @@ from keras.models import load_model
 import gc
 import keras
 
+@st.cache(allow_output_mutation=True)
+def init_sl_model():
+    model = load_model("models/sleeve_length_classifier.hdf5")
+    return model
+
+def predict_sleeve_length(img_pixels_tensor):
+    model = init_sl_model()
+    preds = model.predict(img_pixels_tensor)
+
+    return preds
 
 st.sidebar.write(psutil.virtual_memory())
 
@@ -20,7 +30,7 @@ st.write('\n')
 
 image = Image.open('images/image.png')
 show = st.image(image, use_column_width=True)
-model = load_model("models/sleeve_length_classifier.hdf5")
+
 
 st.sidebar.title("Upload Image")
 
@@ -53,8 +63,7 @@ if st.sidebar.button("Click Here to Classify"):
                 img_pixels = cv2.resize(img_pixels, (256, 256))
                 img_pixels = np.expand_dims(img_pixels, axis=0)
                 img_pixels_tensor = tf.convert_to_tensor(img_pixels, dtype=tf.int32)
-                preds = model.predict(img_pixels_tensor)
-                st.sidebar.write(img_pixels_tensor.shape)
+                preds = predict_sleeve_length(img_pixels_tensor)
                 prediction = np.argmax(preds)
                 st.success('Done!')
                 st.sidebar.header("Algorithm Predicts: ")
