@@ -1,5 +1,6 @@
 Keras==2.4.3
 opencv-python-headless
+psutil
 tensorflow==2.4.1
 numpy==1.19.5
 streamlit==0.80.0
