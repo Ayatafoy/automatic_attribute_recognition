@@ -10,6 +10,7 @@ from keras.models import load_model
 import gc
 import keras
 
+
 st.sidebar.write(psutil.virtual_memory())
 
 classes = ['3 / 4 Sleeve', 'Short Sleeve', 'Sleeveless', 'Long Sleeve']
@@ -19,8 +20,6 @@ st.write('\n')
 
 image = Image.open('images/image.png')
 show = st.image(image, use_column_width=True)
-
-
 model = load_model("models/sleeve_length_classifier.hdf5")
 
 st.sidebar.title("Upload Image")
@@ -55,7 +54,7 @@ if st.sidebar.button("Click Here to Classify"):
                 img_pixels = np.expand_dims(img_pixels, axis=0)
                 img_pixels_tensor = tf.convert_to_tensor(img_pixels, dtype=tf.int32)
                 preds = model.predict(img_pixels_tensor)
-                st.sidebar.write(psutil.virtual_memory())
+                st.sidebar.write(img_pixels_tensor.shape)
                 prediction = np.argmax(preds)
                 st.success('Done!')
                 st.sidebar.header("Algorithm Predicts: ")
@@ -64,6 +63,7 @@ if st.sidebar.button("Click Here to Classify"):
                 st.sidebar.write('**Probability: **', preds[0][prediction] * 100, '%')
                 # gc.collect()
                 # keras.backend.clear_session()
-            except Exception:
+            except Exception as e:
+                st.sidebar.error(e)
                 st.sidebar.error("This file format is not supported. Please try to upload another image...")
 
