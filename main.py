@@ -14,7 +14,8 @@ def init_sl_model():
 
 def predict_sleeve_length(img_pixels_tensor):
     model = init_sl_model()
-    preds = model.predict(img_pixels_tensor)
+    with tf.device('/cpu'):
+        preds = model.predict(img_pixels_tensor)
 
     return preds
 
