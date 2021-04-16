@@ -16,7 +16,8 @@ def get_dress(img, model):
     img = tf.image.resize_with_pad(img, target_height=512, target_width=512)
     bgr = img.numpy()
     img = np.expand_dims(img, axis=0) / 255.
-    seq = model.predict(img)
+    with tf.device('/gpu'):
+        seq = model.predict(img)
     seq_new = seq[3][0, :, :, 0]
     mask = np.where(seq_new > 0.02, 1, 0)
     pixels = bgr[:, :, ::-1][mask != 0]
@@ -57,27 +58,30 @@ def load_color_classifier():
 
 @st.cache(allow_output_mutation=True)
 def load_segmentation_model():
-    model = load_model("models/segmentation_model.h5")
+    with tf.device('/gpu'):
+        model = load_model("models/segmentation_model.h5")
     return model
 
 @st.cache(allow_output_mutation=True)
 def load_sleeve_length_classifier():
-    model = load_model("models/sleeve_length_classifier.hdf5")
+    with tf.device('/gpu'):
+        model = load_model("models/sleeve_length_classifier.hdf5")
     return model
 
 @st.cache(allow_output_mutation=True)
 def load_dress_length_classifier():
-    model = load_model("models/dress_length_classifier.hdf5")
+    with tf.device('/gpu'):
+        model = load_model("models/dress_length_classifier.hdf5")
     return model
 
 def predict_sleeve_length(img_pixels_tensor, model):
-    with tf.device('/cpu'):
+    with tf.device('/gpu'):
         preds = model.predict(img_pixels_tensor)
 
     return preds
 
 def predict_dress_length(img_pixels_tensor, model):
-    with tf.device('/cpu'):
+    with tf.device('/gpu'):
         preds = model.predict(img_pixels_tensor)
 
     return preds
@@ -94,10 +98,9 @@ def parse_colors(colors):
 
 try:
     cache, names = load_color_classifier()
-    with tf.device('/gpu'):
-        sl_model = load_sleeve_length_classifier()
-        dl_model = load_dress_length_classifier()
-        seg_model = load_segmentation_model()
+    sl_model = load_sleeve_length_classifier()
+    dl_model = load_dress_length_classifier()
+    seg_model = load_segmentation_model()
     sl_classes = ['3 / 4 Sleeve', 'Short Sleeve', 'Sleeveless', 'Long Sleeve']
     dl_classes = ['long', 'short', 'midi', 'knee']
     st.write('\n')
