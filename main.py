@@ -94,7 +94,7 @@ def parse_colors(colors):
 
 try:
     cache, names = load_color_classifier()
-    with tf.device('/cpu'):
+    with tf.device('/gpu'):
         sl_model = load_sleeve_length_classifier()
         dl_model = load_dress_length_classifier()
         seg_model = load_segmentation_model()
