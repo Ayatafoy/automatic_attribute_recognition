@@ -42,10 +42,11 @@ try:
             st.sidebar.write("Please upload an Image to Classify")
 
         else:
-
             with st.spinner('Classifying ...'):
                 try:
                     image = np.asarray(u_img)
+                    if image.shape[2] == 4:
+                        image = image[:, :, :3]
                     img_pixels = preprocess_input(image)
                     img_pixels = cv2.resize(img_pixels, (256, 256))
                     img_pixels = np.expand_dims(img_pixels, axis=0)
@@ -55,7 +56,8 @@ try:
                     st.success('Done!')
                     st.sidebar.header("Algorithm Predicts: ")
                     probability = "{:.3f}".format(float(preds[0][prediction] * 100))
-                    st.sidebar.write(f"Predicted sleeve length: {classes[prediction]}", '\n')
+                    st.sidebar.write('**Predicted sleeve length: **', classes[prediction])
+                    st.sidebar.write('\n')
                     st.sidebar.write('**Probability: **', preds[0][prediction] * 100, '%')
                 except Exception as e:
                     st.sidebar.error(e)
